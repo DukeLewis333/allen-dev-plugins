@@ -1,6 +1,6 @@
 {
   "name": "jdtls-lsp",
-  "description": "java language server protocol",
+  "description": "Java language server (Eclipse JDT.LS) for code intelligence",
   "author": {
     "name": "Allen Huang",
     "email": "jialong.huang01@hand-china.com"
