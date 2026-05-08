@@ -1,43 +1,47 @@
 ---
 name: hzero-claudemd-generator
-description: Generate or update CLAUDE.md project instruction files for H0 (hzero) platform microservices. Use when the user asks to create, write, or update a CLAUDE.md file in any hzero-based Java microservice project, or when setting up Claude Code for a new H0 project. Covers DDD four-layer architecture, MyBatis patterns, Spring Boot conventions, and HZERO platform specifics.
+description: >
+  Generate or update CLAUDE.md project instruction files for H0 (hzero) platform
+  microservices. Covers DDD four-layer architecture, MyBatis patterns, Spring Boot
+  conventions, and HZERO platform specifics.
+when_to_use: >
+  Trigger when user asks to create, write, or update a CLAUDE.md file in any
+  hzero-based Java microservice project, or when setting up Claude Code for a
+  new H0 project. Also matches "generate claudemd", "init project instructions",
+  or "bootstrap H0 project config".
+arguments: [output_path]
+argument-hint: [output-path]
+allowed-tools: Read Glob Grep Bash(find *) Bash(cat *) Bash(ls *) Bash(wc *) Bash(head *)
 ---
 
 # H0 Platform CLAUDE.md Generator
 
 Generate comprehensive CLAUDE.md files for H0 (hzero) platform microservice projects.
 
-## Workflow
+## Current Project Context
 
-1. **Analyze project** — Scan the project to gather facts
-2. **Generate CLAUDE.md** — Write the main file (150-200 lines)
-3. **Split if needed** — Create `docs/` sub-files with `@import` syntax when content exceeds 200 lines
-4. **Validate** — Review line counts and cross-references
-
-## Step 1: Analyze the Project
-
-Run these scans (in parallel where possible):
-
-```bash
-# Project coordinates
-Read pom.xml (first 40 lines for GAV, parent, key dependencies)
-
-# Package structure
-find src/main/java -maxdepth 3 -type d | sort
-
-# Scale metrics
-find src/main/java -name "*.java" | wc -l       # Java file count
-ls src/main/java/.../api/controller/v1/          # Controllers
-ls src/main/java/.../domain/entity/              # Entities
-ls src/main/java/.../app/service/                # Services
-ls src/main/java/.../job/                        # Scheduled jobs (if exists)
-
-# Resources
-find src/main/resources -type f | sort           # All resources
-cat src/main/resources/bootstrap.yml              # Service name, port, config
+```!
+echo "=== POM (first 40 lines) ==="
+head -40 pom.xml 2>/dev/null || echo "No pom.xml found"
+echo ""
+echo "=== Package structure (depth 3) ==="
+find src/main/java -maxdepth 3 -type d 2>/dev/null | sort || echo "No src/main/java"
+echo ""
+echo "=== Java file count ==="
+find src/main/java -name "*.java" 2>/dev/null | wc -l
+echo ""
+echo "=== Resources ==="
+find src/main/resources -type f 2>/dev/null | sort || echo "No resources"
+echo ""
+echo "=== Bootstrap config ==="
+cat src/main/resources/bootstrap.yml 2>/dev/null || cat src/main/resources/application.yml 2>/dev/null || echo "No bootstrap.yml"
 ```
 
-From the scans, extract:
+## Workflow
+
+### Step 1: Analyze the Project
+
+From the project context above, extract these facts:
 
 - **Artifact name** from pom.xml → derive service description
 - **Parent version** → platform version (e.g., hzero-apaas-parent 2.10.0)
@@ -47,11 +51,22 @@ From the scans, extract:
 - **Job handlers** from job/ directory (if exists)
 - **Integration points** from feign/, config/, himp/ directories
 
-## Step 2: Generate CLAUDE.md
+If the context above is empty or incomplete, run additional scans manually:
+
+```bash
+ls src/main/java/.../api/controller/v1/          # Controllers
+ls src/main/java/.../domain/entity/               # Entities
+ls src/main/java/.../app/service/                 # Services
+ls src/main/java/.../job/ 2>/dev/null             # Scheduled jobs
+```
+
+### Step 2: Generate CLAUDE.md
+
+Write the CLAUDE.md file to the path specified by `$ARGUMENTS`, or to the project root if no path given.
 
 Use the template below, filling in `[placeholders]` with discovered facts. Target 150-200 lines.
 
-### Required Sections
+#### Required Sections
 
 ```markdown
 # CLAUDE.md — [service-name]
@@ -75,9 +90,9 @@ Use the template below, filling in `[placeholders]` with discovered facts. Targe
 [8 files to create for a new CRUD entity]
 ```
 
-### H0 Platform Constants (always include)
+#### H0 Platform Constants (always include)
 
-These apply to ALL H0 projects:
+These apply to ALL H0 projects — always embed them in Coding Conventions:
 
 - **Architecture**: DDD four-layer (api/app/domain/infra)
 - **Entity base class**: `AuditDomain` with `@VersionAudit` + `@ModifyAudit`
@@ -95,20 +110,15 @@ These apply to ALL H0 projects:
 - **Field constants**: `FIELD_XXX` in entities
 - **MyBatis**: `mapUnderscoreToCamelCase: true`, dynamic `<if>` queries
 
-See [references/hzero-platform-reference.md](references/hzero-platform-reference.md) for detailed patterns.
+For detailed code templates (Entity, Controller, Service, Repository, MyBatis XML), see [references/hzero-platform-reference.md](${CLAUDE_SKILL_DIR}/references/hzero-platform-reference.md).
 
-## Step 3: Split if Needed
+### Step 3: Split if Needed
 
-If CLAUDE.md exceeds 200 lines, extract content into `.claude/docs/` sub-files:
+If CLAUDE.md exceeds 200 lines, extract content into `.claude/docs/` sub-files.
 
-### Split Rules
+**Main CLAUDE.md**: Keep under 200 lines. Must contain Overview, Behavioral Guidelines, Package Structure, Business Modules table, Coding Conventions (core), and `@import` references.
 
-- **Main CLAUDE.md**: Keep under 200 lines. Must contain Overview, Behavioral Guidelines, Package Structure, Business Modules table, Coding Conventions (core), and @import references.
-- **docs/** files: Each focuses on one domain. Use `@.claude/docs/filename.md` syntax in main file.
-
-### Recommended Split Topics
-
-When the project has these features, extract them:
+**docs/ files**: Each focuses on one domain. Use `@.claude/docs/filename.md` import syntax in main file.
 
 | Has this... | Extract to... |
 | ----------- | ------------- |
@@ -118,8 +128,6 @@ When the project has these features, extract them:
 | Import framework (importservice/) | `docs/import-framework.md` |
 | Report parsing (report/) | `docs/report-patterns.md` |
 | Auth/custom annotations (auth/) | `docs/auth-patterns.md` |
-
-### Import Syntax
 
 Add a `## Additional References` section at the end of CLAUDE.md:
 
@@ -131,9 +139,9 @@ Add a `## Additional References` section at the end of CLAUDE.md:
 - Data layer & processing: @.claude/docs/data-layer-patterns.md
 ```
 
-## Step 4: Validate
+### Step 4: Validate
 
 - Count lines: main CLAUDE.md must be 150-200
-- Verify all @import paths reference existing files
+- Verify all `@import` paths reference existing files
 - Check no critical section is missing
 - Ensure module table matches actual controller/entity names
