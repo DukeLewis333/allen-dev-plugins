@@ -1,0 +1,21 @@
+{
+  "name": "allen-dev-plugins",
+  "owner": {
+    "name": "Allen Huang",
+    "email": "jialong.huang01@hand-china.com"
+  },
+  "metadata": {
+    "description": "H0 (hzero) platform development toolkit for Claude Code — DDD architecture, MyBatis patterns, and microservice code generation skills",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "h0-java-dev",
+      "description": "H0 platform microservice development plugin",
+      "source": "./plugins/h0-java-dev",
+      "strict": false,
+      "category": "development",
+      "tags": ["java", "spring-boot", "hzero", "ddd", "mybatis", "microservice"]
+    }
+  ]
+}
