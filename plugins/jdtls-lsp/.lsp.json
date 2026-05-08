@@ -1,0 +1,23 @@
+{
+    "java": {
+        "command": "jdtls",
+        "env": {
+            "JAVA_HOME": "C:\\Users\\20255\\.jdks\\corretto-21.0.9"
+        },
+        "args": [
+            "-data",
+            "D:\\.jdtls-workspace"
+        ],
+        "initializationOptions": {
+            "settings": {
+                "java.maven.downloadSources": true,
+                "java.maven.downloadJavadoc": true,
+                "java.autobuild.enabled": false,
+                "java.contentProvider.preferred": "decompiled"
+            }
+        },
+        "extensionToLanguage": {
+            ".java": "java"
+        }
+    }
+}

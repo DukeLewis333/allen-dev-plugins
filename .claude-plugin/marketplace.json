@@ -16,6 +16,38 @@
       "strict": false,
       "category": "development",
       "tags": ["java", "spring-boot", "hzero", "ddd", "mybatis", "microservice"]
+    },
+    {
+      "name": "jdtls-lsp",
+      "description": "Java language server (Eclipse JDT.LS) for code intelligence",
+      "version": "1.0.0",
+      "author": {
+        "name": "Anthropic",
+        "email": "support@anthropic.com"
+      },
+      "source": "./plugins/jdtls-lsp",
+      "category": "development",
+      "strict": false,
+      "lspServers": {
+        "jdtls": {
+          "command": "jdtls",
+          "args": [
+            "-data",
+            "D:\\.jdtls-workspace"
+          ],
+          "initializationOptions": {
+            "settings": {
+              "java.maven.downloadSources": true,
+              "java.maven.downloadJavadoc": true,
+              "java.autobuild.enabled": false,
+              "java.contentProvider.preferred": "decompiled"
+            }
+          },
+          "extensionToLanguage": {
+            ".java": "java"
+          }
+        }
+      }
     }
   ]
 }

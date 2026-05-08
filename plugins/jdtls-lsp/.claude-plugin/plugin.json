@@ -1,0 +1,9 @@
+{
+  "name": "jdtls-lsp",
+  "description": "java language server protocol",
+  "author": {
+    "name": "Allen Huang",
+    "email": "jialong.huang01@hand-china.com"
+  }
+}
+
