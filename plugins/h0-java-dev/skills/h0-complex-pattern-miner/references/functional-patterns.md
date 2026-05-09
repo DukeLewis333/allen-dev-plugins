@@ -147,7 +147,7 @@ DataSizeContextHolder (ThreadLocal)
 ### When to Extract as Skill
 
 - When importing from multiple source systems with different Excel formats
-- When header rows vary (D365 has 3 header rows, others have 1)
+- When header rows vary across source systems (some have 3 header rows, others have 1)
 - When batch processing needs progress tracking across threads
 
 ### Extraction Checklist
@@ -321,7 +321,7 @@ ConcreteParserD (GC)
 
 ## 8. External System Integration Adapter
 
-**Complexity Score**: 3-4 | **Found In**: E1, D365, XTS, Microsoft Graph API, YQ Cloud
+**Complexity Score**: 3-4 | **Found In**: ERP integrations, third-party API integrations, payment gateway integrations
 
 ### Pattern Structure
 

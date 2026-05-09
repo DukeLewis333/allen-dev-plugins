@@ -83,7 +83,7 @@ Evaluate each candidate against two axes:
 | Multi-criteria Matching | Payment matching with amount tolerance, date windows, fuzzy name |
 | State Machine | Status transitions with validation rules |
 | Consolidation Logic | Aggregation with zero-effect detection, cancellation handling |
-| External Sync | Multi-system data reconciliation (E1, D365, XTS) |
+| External Sync | Multi-system data reconciliation with external ERPs or APIs |
 | Financial Posting | GL posting with debit/credit, exchange rates, tax handling |
 | Mail Workflow | Automated classification, parsing, and downstream triggering |
 

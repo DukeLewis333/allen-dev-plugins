@@ -7,7 +7,7 @@ Claude Code 开发插件集合，为 H0（Hzero）平台 Java 微服务开发提
 | 插件 | 说明 |
 |------|------|
 | [jdtls-lsp](plugins/jdtls-lsp/) | 基于 Eclipse JDT.LS 的 Java 语言服务器，提供代码智能提示与重构 |
-| [h0-java-dev](plugins/h0-java-dev/) | H0 平台微服务开发工具集，包含 CLAUDE.md 生成器和复杂模式挖掘器 |
+| [h0-java-dev](plugins/h0-java-dev/) | H0 平台微服务开发工具集，包含 CLAUDE.md 生成器、复杂模式挖掘器和模块分析代理 |
 
 ---
 
@@ -25,12 +25,20 @@ Claude Code 开发插件集合，为 H0（Hzero）平台 Java 微服务开发提
 
 ### h0-java-dev
 
-H0 平台微服务开发工具集，包含以下技能（Skills）：
+H0 平台微服务开发工具集，包含以下技能（Skills）和代理（Agents）：
+
+#### 技能（Skills）
 
 | 技能 | 说明 |
 |------|------|
 | **hzero-claudemd-generator** | 为 H0 平台微服务项目生成或更新 CLAUDE.md。自动扫描项目结构，内联实时数据，输出 150-200 行的规范指令文件。支持参数指定输出路径 |
 | **h0-complex-pattern-miner** | 分析 H0 平台微服务项目，识别复杂的功能实现和业务逻辑模式，并提取为可复用的 Skill 或 Agent 定义 |
+
+#### 代理（Agents）
+
+| 代理 | 说明 |
+|------|------|
+| **h0-module-analyzer** | 分析 H0 微服务项目，识别业务模块边界，为每个模块生成专属的子代理 |
 
 ---
 
@@ -46,17 +54,24 @@ allen-dev-plugins/
     │   └── README.md                    # 安装与使用说明
     └── h0-java-dev/                     # H0 开发工具集
         ├── .claude-plugin/plugin.json   # 插件元数据
-        └── skills/
-            ├── hzero-claudemd-generator/       # CLAUDE.md 生成器
-            │   ├── SKILL.md
-            │   └── references/
-            │       └── hzero-platform-reference.md
-            └── h0-complex-pattern-miner/       # 复杂模式挖掘器
-                ├── SKILL.md
-                └── references/
-                    ├── functional-patterns.md
-                    ├── business-patterns.md
-                    └── output-templates.md
+        ├── rules/                       # 项目规则
+        │   └── h0-js-api.md
+        ├── skills/
+        │   ├── hzero-claudemd-generator/       # CLAUDE.md 生成器
+        │   │   ├── SKILL.md
+        │   │   └── references/
+        │   │       └── hzero-platform-reference.md
+        │   └── h0-complex-pattern-miner/       # 复杂模式挖掘器
+        │       ├── SKILL.md
+        │       └── references/
+        │           ├── functional-patterns.md
+        │           ├── business-patterns.md
+        │           └── output-templates.md
+        └── agents/
+            ├── h0-module-analyzer.md           # 模块分析代理
+            └── references/
+                ├── module-agent-template.md
+                └── module-discovery-rules.md
 ```
 
 ---

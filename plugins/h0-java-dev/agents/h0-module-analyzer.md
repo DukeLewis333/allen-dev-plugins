@@ -120,6 +120,6 @@ Generate a master index file `{output-dir}/module-agents-catalog.md` listing:
 
 After each phase, report:
 - **status**: `success` | `warning` | `error`
-- **summary**: One-line result (e.g., "Found 8 modules: AR, Order, Booking, E1, Vendor, XTS, Mail, Mapping")
+- **summary**: One-line result (e.g., "Found 6 modules: Payment, Order, Inventory, Notification, Integration, Config")
 - **next_actions**: What needs to happen next
 - **artifacts**: File paths created or modified

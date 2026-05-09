@@ -122,4 +122,4 @@ When generating a module agent from this template:
 
 6. **Common Tasks**: Based on the module's complexity and size, list 5-8 common development tasks someone might ask an agent to do within this module.
 
-7. **Module-Specific Conventions**: Look for patterns unique to this module that aren't covered by the project-wide CLAUDE.md. For example, the AR module uses self-injection for transactional methods, the Order module uses AbstractOrderDataProcessor, etc.
+7. **Module-Specific Conventions**: Look for patterns unique to this module that aren't covered by the project-wide CLAUDE.md. For example, if a module uses self-injection for transactional methods, or uses a custom abstract processor, document that here.

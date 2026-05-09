@@ -8,22 +8,15 @@ H0 projects follow a naming convention where entities in the same business modul
 
 ### Prefix Extraction Algorithm
 
-```
+```text
 For each entity file in domain/entity/:
   1. Remove ".java" suffix
   2. Extract prefix: strip trailing PascalCase segments
-  3. Common prefixes in H0 projects:
-     - Ar*      → AR (Accounts Receivable)
-     - Order*   → Order Management
-     - Booking* → Booking Plans
-     - Mail*    → Mail Integration
-     - Xts*     → XTS Integration
-     - D365*    → D365 Integration
-     - E1*      → E1 Integration
-     - Packing* → Packing Lists
-     - Po*      → PO Mapping
-     - *Mapping → Data Mapping
-     - Gc*      → GC Module
+  3. Common patterns:
+     - [Domain]*         → Primary business domain (e.g., Order*, Payment*, Inventory*)
+     - [System][Domain]* → Integration-specific entities (e.g., ErpOrder*, ApiPayment*)
+     - [Action]*         → Workflow entities (e.g., Import*, Report*, Mail*)
+     - *Mapping          → Data mapping/configuration entities
 ```
 
 ### Prefix Merging Rules
@@ -32,38 +25,28 @@ Some prefixes belong to the same logical module:
 
 | Detected Prefixes | Merged Module | Reason |
 |-------------------|---------------|--------|
-| `Ar*`, `ArBank*` | AR | Bank is part of AR domain |
-| `ArRb*`, `ArUr*` | AR | RB/UR posting is AR sub-domain |
-| `ArVendor*`, `ArVendorPk*`, `ArVendorVg*` | AR - Vendor | Vendor preview is AR sub-domain |
-| `Order*`, `OrderHistory*` | Order | History is part of Order lifecycle |
-| `D365Order*`, `E1Order*`, `Xts*` | Integration | External system integration layer |
-| `BookingPlan*`, `LFMU*` | Booking | LFMU reports serve booking |
-| `Mail*`, `MailReceive*`, `MailSend*`, `GcMail*` | Mail | All mail-related |
-| `CustomerMapping*`, `ForwarderMapping*`, `StaffMapping*`, `SupplierMapping*` | Mapping | All code mapping services |
-| `PackingList*`, `PackingMail*` | Packing | Packing list management |
-| `PoMapping*` | PO Mapping | Purchase order mapping |
+| `[Domain]*`, `[Domain]Detail*` | [Domain] | Detail is sub-entity of main domain |
+| `[Domain]*`, `[Domain]History*` | [Domain] | History is part of entity lifecycle |
+| `[SystemA][Domain]*`, `[SystemB][Domain]*` | Integration | External system integration layer |
+| `[Domain]*Line*`, `[Domain]*Header*` | [Domain] | Line/Header are domain sub-entities |
 
 ## Secondary Detection: DTO Directory Grouping
 
 The `api/dto/` directory often has subdirectories per module. Each subdirectory is a module signal:
 
-```
+```text
 api/dto/
-├── arPaymentDetail/    → AR - Payments
-├── arTicket/           → AR - Tickets
-├── bank/               → AR - Bank
-├── e1/                 → E1 Integration
-├── graph/              → Mail (Graph API)
-├── vendorpreview/      → AR - Vendor
-├── xts/                → XTS Integration
-└── yqcloud/            → External Integration
+├── [moduleA]/           → Module A
+├── [moduleB]/           → Module B
+├── [moduleC]Detail/     → Module C sub-feature
+└── [integrationName]/   → External integration
 ```
 
 ## Tertiary Detection: Service Cluster Analysis
 
 Services that share dependencies form a cluster. If ServiceA and ServiceB both inject the same 3+ repositories, they likely belong to the same module.
 
-```
+```text
 For each service:
   Collect injected repositories
   Group services by shared repository overlap (>50% shared repos → same module)
@@ -90,7 +73,7 @@ After detection, validate each module boundary:
 
 - Fewer than 2 entities → merge into parent
 - No service layer → merge into parent (data-only)
-- Entity is clearly a sub-entity of another module (e.g., `ArVendorPreviewLineSource` is clearly AR)
+- Entity is clearly a sub-entity of another module
 
 ## Special Module Categories
 
@@ -103,19 +86,18 @@ These modules serve multiple business modules and should be detected separately:
 | Auth/Security | Custom annotations, interceptors | Separate agent: `auth-agent` |
 | Import Framework | `infra/importservice/` | Separate agent: `import-agent` |
 | Report Parsing | `infra/report/` | Separate agent: `report-agent` |
-| Payment Advice | `infra/paymentadvice/` | Part of AR or separate |
 | Scheduled Jobs | `job/` directory | Distributed to owning module |
 
 ### Integration Modules
 
 Modules that primarily sync data with external systems:
 
-| Integration | Key Indicator | Entity Count |
+| Integration | Key Indicator | Decision Rule |
 |------------|---------------|--------------|
-| E1 | `E1*` prefix, `api/dto/e1/` | 2-4 entities |
-| D365 | `D365*` prefix | 1-2 entities |
-| XTS | `Xts*` prefix, `api/dto/xts/` | 2 entities |
-| Graph API | `GraphServiceClient`, `api/dto/graph/` | Config-driven |
+| ERP/External A | `[SystemA]*` prefix, `api/dto/[systemA]/` | If 4+ entities → separate agent |
+| ERP/External B | `[SystemB]*` prefix | If 4+ entities → separate agent |
+| API Partner | Feign client, config-driven | Merge into consuming module if < 4 entities |
+| File Feed | File import handler | Merge into consuming module if < 4 entities |
 
 Decision: If an integration has 4+ entities, generate a separate agent. If fewer, merge into the consuming module.
 
@@ -123,21 +105,19 @@ Decision: If an integration has 4+ entities, generate a separate agent. If fewer
 
 After identifying modules, build a dependency graph:
 
-```
+```text
 For each module:
   Scan service impl imports
   For each import of another module's entity/service:
     Add edge: this_module → other_module
 ```
 
-### Dependency Patterns
+### Common Dependency Patterns
 
-- **AR → Order**: AR payment matching reads order data
-- **AR → Mail**: AR ticket creation triggered by bank mails
-- **AR → E1**: AR address book syncs with E1
-- **Order → Integration**: Order imports from D365/E1/XTS
-- **Booking → Order**: Booking references order data
-- **Mail → AR**: Mail processing creates AR tickets
+- **Module A → Module B**: Module A reads or references Module B's data
+- **Module A → Integration**: Module A syncs data with external systems
+- **Module A → Notification**: Module A triggers notifications
+- **Cross-cutting → All**: Auth, config, or utility modules used by everyone
 
 ### Circular Dependency Handling
 
@@ -152,17 +132,17 @@ The module discovery phase produces a JSON-like structure for each module:
 
 ```json
 {
-  "moduleId": "ar",
-  "moduleName": "AR (Accounts Receivable)",
-  "entities": ["ArTicket", "ArPaymentDetail"],
-  "services": ["ArTicketServiceImpl", "ArPaymentDetailServiceImpl"],
-  "repositories": ["ArTicketRepository"],
-  "mappers": ["ArTicketMapper"],
-  "controllers": ["ArTicketController"],
-  "dtos": ["ArTicketQueryDTO"],
-  "jobs": ["MatchTicketsWithPaymentHandler"],
-  "dependencies": ["order", "mail", "e1"],
-  "fileCount": 145,
-  "complexity": "high"
+  "moduleId": "[prefix-lowercase]",
+  "moduleName": "[Human Readable Module Name]",
+  "entities": ["[EntityA]", "[EntityB]"],
+  "services": ["[EntityA]ServiceImpl", "[EntityB]ServiceImpl"],
+  "repositories": ["[EntityA]Repository"],
+  "mappers": ["[EntityA]Mapper"],
+  "controllers": ["[EntityA]Controller"],
+  "dtos": ["[EntityA]QueryDTO"],
+  "jobs": ["[JobHandlerName]"],
+  "dependencies": ["[other-module-id]"],
+  "fileCount": 0,
+  "complexity": "medium"
 }
 ```
