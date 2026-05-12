@@ -104,7 +104,7 @@ allen-dev-plugins/
 ---
 
 ## 安装
-打开claude-code命令行窗口，执行/plugin，然后切换到Marketplaces栏，然后选择Add Marketplace，输入https://github.com/DukeLewis333/allen-dev-plugins.git然后确认即可。
+打开claude-code命令行窗口，执行/plugin，然后切换到Marketplaces栏，然后选择Add Marketplace，输入https://github.com/DukeLewis333/allen-dev-plugins.git 然后确认即可。
 
 具体配置方式请参考各插件目录下的说明文档。
 
