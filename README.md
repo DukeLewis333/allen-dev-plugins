@@ -80,6 +80,9 @@ allen-dev-plugins/
         ├── .claude-plugin/plugin.json   # 插件元数据
         ├── rules/                       # 项目规则
         │   └── h0-js-api.md
+        ├── hooks/                        # PreToolUse hooks
+        │   ├── hooks.json                # Hook 配置
+        │   └── context-gate.js           # Fact-Forcing Gate 脚本
         ├── skills/
         │   ├── hzero-claudemd-generator/       # CLAUDE.md 生成器
         │   │   ├── SKILL.md
