@@ -34,6 +34,7 @@ H0 平台微服务开发工具集，包含以下技能（Skills）和代理（Ag
 | **hzero-claudemd-generator** | 为 H0 平台微服务项目生成或更新 CLAUDE.md。自动扫描项目结构，内联实时数据，输出 150-200 行的规范指令文件。支持参数指定输出路径 |
 | **h0-complex-pattern-miner** | 分析 H0 平台微服务项目，识别复杂的功能实现和业务逻辑模式，并提取为可复用的 Skill 或 Agent 定义 |
 | **h0-code-flow-analyzer** | 分析 H0 平台微服务代码，追踪执行路径和调用链，生成详尽的自包含 HTML 报告（含流程图、逐步说明、分支逻辑、数据流转） |
+| **h0-api-tester** | 测试 H0 平台 API 接口，自动从 `.claude/h0-auth.yaml` 读取认证配置获取 OAuth2 Token，然后带 Token 请求目标接口并报告结果 |
 
 #### 代理（Agents）
 
@@ -111,10 +112,14 @@ allen-dev-plugins/
         │   │       ├── functional-patterns.md
         │   │       ├── business-patterns.md
         │   │       └── output-templates.md
-        │   └── h0-code-flow-analyzer/          # 代码流程分析器
+        │   ├── h0-code-flow-analyzer/          # 代码流程分析器
+        │   │   ├── SKILL.md
+        │   │   └── references/
+        │   │       └── html-template.md
+        │   └── h0-api-tester/                  # 接口测试器
         │       ├── SKILL.md
         │       └── references/
-        │           └── html-template.md
+        │           └── auth-config-template.md
         └── agents/
             ├── h0-module-analyzer.md           # 模块分析代理
             └── references/
