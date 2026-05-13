@@ -428,6 +428,26 @@ public class OrderChangeConfirmDTO {
 - 保存操作时在 Controller 层设置租户：`item.setTenantId(organizationId)`
 - 框架自动处理数据隔离的租户过滤
 
+## 9.1 获取当前用户信息
+
+使用 `DetailsHelper.getUserDetails()` 获取当前登录用户的详细信息对象：
+
+```java
+// 获取当前用户详情
+CustomUserDetails userDetails = DetailsHelper.getUserDetails();
+
+// 常用字段
+Long userId = userDetails.getUserId();           // 用户ID
+Long tenantId = userDetails.getTenantId();       // 租户ID（同 organizationId）
+String loginName = userDetails.getLoginName();   // 登录名
+Long roleId = userDetails.getRoleId();           // 角色ID
+```
+
+**使用场景**：
+- Service 层需要记录操作人时，通过 `DetailsHelper.getUserDetails().getUserId()` 获取
+- 需要租户 ID 但不在 Controller 参数中时，通过 `DetailsHelper.getUserDetails().getTenantId()` 获取
+- 不要将 `organizationId` 路径参数和 `DetailsHelper.getTenantId()` 混用，优先使用路径参数
+
 ## 10. 分页查询规范
 
 ```

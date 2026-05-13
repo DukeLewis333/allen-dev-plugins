@@ -67,6 +67,7 @@ Read the configuration file at `.claude/h0-auth.yaml` in the project root.
 ```yaml
 # H0 平台认证配置
 base_url: https://api.example.com
+service_prefix: /hzero-demo-12345/v1
 username: admin
 password: admin123
 client: client
@@ -78,6 +79,7 @@ client_secret: secret
 | Field | Required | Default | Description |
 |-------|----------|---------|-------------|
 | `base_url` | Yes | — | API 网关地址（如 `https://hz.example.com`） |
+| `service_prefix` | Yes | — | 测试接口路径前缀（如 `/hzero-demo-12345/v1`），调用接口时自动拼接到 `base_url` 之后 |
 | `username` | Yes | — | 登录用户名 |
 | `password` | Yes | — | 登录密码 |
 | `client` | No | `client` | OAuth2 客户端 ID |
@@ -90,6 +92,7 @@ mkdir -p .claude
 cat > .claude/h0-auth.yaml << 'EOF'
 # H0 平台认证配置
 base_url: https://your-api-gateway.example.com
+service_prefix: /your-service-name/v1
 username: your_username
 password: your_password
 client: client
@@ -175,8 +178,12 @@ echo "Token obtained successfully: ${ACCESS_TOKEN:0:20}..."
 With the token, construct and send the actual API request. The token goes into the `Authorization: Bearer` header (matching how Postman uses it).
 
 ```bash
-# Construct full URL
-FULL_URL="${BASE_URL}${API_PATH}"
+# Read service prefix from config
+SERVICE_PREFIX=$(get_config "service_prefix")
+
+# Construct full URL: base_url + service_prefix + api_path
+# Example: https://hz.example.com + /hzero-demo-12345/v1 + /1/orders
+FULL_URL="${BASE_URL}${SERVICE_PREFIX}${API_PATH}"
 
 # Send request based on method
 case "$METHOD" in
