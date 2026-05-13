@@ -164,6 +164,7 @@ function editGateMsg(filePath) {
     '2. List the public functions/classes affected by this change',
     '3. If this file reads/writes data files, show field names, structure, and date format (use redacted or synthetic values, not raw production data)',
     "4. Quote the user's current instruction verbatim",
+    '5. Confirm the proposed changes comply with rules in .claude/rules/ (list relevant rule files and how they apply)',
     '',
     'Present the facts, then retry the same operation.'
   ].join('\n');
@@ -180,6 +181,7 @@ function writeGateMsg(filePath) {
     '2. Confirm no existing file serves the same purpose (use Glob)',
     '3. If this file reads/writes data files, show field names, structure, and date format (use redacted or synthetic values, not raw production data)',
     "4. Quote the user's current instruction verbatim",
+    '5. Confirm the proposed changes comply with rules in .claude/rules/ (list relevant rule files and how they apply)',
     '',
     'Present the facts, then retry the same operation.'
   ].join('\n');

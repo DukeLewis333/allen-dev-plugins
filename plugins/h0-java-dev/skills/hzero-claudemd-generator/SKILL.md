@@ -109,6 +109,7 @@ These apply to ALL H0 projects — always embed them in Coding Conventions:
 - **API paths**: `/v1/{organizationId}/xxx-xxx` (kebab-case)
 - **Field constants**: `FIELD_XXX` in entities
 - **MyBatis**: `mapUnderscoreToCamelCase: true`, dynamic `<if>` queries
+- **LSP**: When jdtls (Java LSP) is available, use it as the primary tool for go-to-definition, find-references, hover, rename, and code navigation. Prefer LSP operations over Grep/Glob for Java symbol lookups
 
 For detailed code templates (Entity, Controller, Service, Repository, MyBatis XML), see [references/hzero-platform-reference.md](${CLAUDE_SKILL_DIR}/references/hzero-platform-reference.md).
 
