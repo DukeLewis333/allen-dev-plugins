@@ -35,6 +35,7 @@ H0 平台微服务开发工具集，包含以下技能（Skills）和代理（Ag
 | **h0-complex-pattern-miner** | 分析 H0 平台微服务项目，识别复杂的功能实现和业务逻辑模式，并提取为可复用的 Skill 或 Agent 定义 |
 | **h0-code-flow-analyzer** | 分析 H0 平台微服务代码，追踪执行路径和调用链，生成详尽的自包含 HTML 报告（含流程图、逐步说明、分支逻辑、数据流转） |
 | **h0-api-tester** | 测试 H0 平台 API 接口，自动从 `.claude/h0-auth.yaml` 读取认证配置获取 OAuth2 Token，然后带 Token 请求目标接口并报告结果 |
+| **h0-code-review** | H0 平台 Java 微服务代码审查，基于 DDD 四层架构规范对 Controller/Service/Repository/Mapper 各层进行系统化审查，涵盖分层合规性、实体约定、多租户、安全、性能、MyBatis 规范等维度 |
 
 #### 代理（Agents）
 
@@ -120,6 +121,11 @@ allen-dev-plugins/
         │       ├── SKILL.md
         │       └── references/
         │           └── auth-config-template.md
+        │   └── h0-code-review/                      # 代码审查
+        │       ├── SKILL.md
+        │       └── resources/
+        │           ├── REVIEW-CHECKLIST.md
+        │           └── FEEDBACK-GUIDELINES.md
         └── agents/
             ├── h0-module-analyzer.md           # 模块分析代理
             └── references/

@@ -1,5 +1,5 @@
 ---
-name: code-review
+name: h0-code-review
 description: >
   H0 (hzero) 平台 Java 微服务代码审查。基于 DDD 四层架构规范，对 Controller/Service/Repository/Mapper
   各层代码进行系统化审查，涵盖分层合规性、实体约定、多租户、安全、性能、MyBatis 规范等维度。
