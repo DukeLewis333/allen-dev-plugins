@@ -173,45 +173,65 @@ echo "Token obtained successfully: ${ACCESS_TOKEN:0:20}..."
 | `jsonData.access_token` | `grep` from JSON response |
 | `pm.variables.set("token", ...)` | Stored in shell variable for next request |
 
-## Step 4: Send API Request
+## Step 4: Send API Request & Capture Structured Data
 
-With the token, construct and send the actual API request. The token goes into the `Authorization: Bearer` header (matching how Postman uses it).
+Send the request **once** and capture response headers, body, and performance metrics in a single curl call. Use `-D` to dump headers (including the status line) to a temp file, and `-w` to append a metrics footer to stdout.
+
+### Build the request
 
 ```bash
-# Read service prefix from config
 SERVICE_PREFIX=$(get_config "service_prefix")
-
-# Construct full URL: base_url + service_prefix + api_path
-# Example: https://hz.example.com + /hzero-demo-12345/v1 + /1/orders
+USERNAME=$(get_config "username")
 FULL_URL="${BASE_URL}${SERVICE_PREFIX}${API_PATH}"
 
-# Send request based on method
+# Body flag per method (array — safe for JSON bodies with spaces)
 case "$METHOD" in
-  GET)
-    RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}\nTIME:%{time_total}" \
-      -X GET "$FULL_URL" \
-      -H "Authorization: Bearer ${ACCESS_TOKEN}" \
-      -H "Content-Type: application/json" \
-      ${EXTRA_HEADERS})
-    ;;
-  POST|PUT)
-    RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}\nTIME:%{time_total}" \
-      -X "$METHOD" "$FULL_URL" \
-      -H "Authorization: Bearer ${ACCESS_TOKEN}" \
-      -H "Content-Type: application/json" \
-      ${EXTRA_HEADERS} \
-      -d "$REQUEST_BODY")
-    ;;
-  DELETE)
-    RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}\nTIME:%{time_total}" \
-      -X DELETE "$FULL_URL" \
-      -H "Authorization: Bearer ${ACCESS_TOKEN}" \
-      -H "Content-Type: application/json" \
-      ${EXTRA_HEADERS} \
-      ${REQUEST_BODY:+-d "$REQUEST_BODY"})
-    ;;
+  POST|PUT) BODY_FLAG=(-d "$REQUEST_BODY") ;;
+  DELETE)   if [ -n "$REQUEST_BODY" ]; then BODY_FLAG=(-d "$REQUEST_BODY"); else BODY_FLAG=(); fi ;;
+  *)        BODY_FLAG=() ;;
 esac
+
+# Self-signed cert support: set K_FLAG=(-k) ONLY for dev https with self-signed certs
+K_FLAG=()
 ```
+
+### Send and capture
+
+```bash
+HEADERS_FILE=$(mktemp)
+BODY=$(curl -s -D "$HEADERS_FILE" \
+  -w '\n@@METRICS@@|%{http_code}|%{time_total}|%{size_download}|%{size_upload}|%{content_type}|%{num_redirects}' \
+  "${K_FLAG[@]}" \
+  -X "$METHOD" "$FULL_URL" \
+  -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+  -H "Content-Type: application/json" \
+  "${EXTRA_HEADERS[@]}" \
+  "${BODY_FLAG[@]}")
+CURL_EXIT=$?
+```
+
+### Parse the captured data
+
+| Data | Source | How |
+|---|---|---|
+| Status line (code + text) | `$HEADERS_FILE` line 1 | e.g. `HTTP/1.1 201 Created` |
+| Response headers | `$HEADERS_FILE` lines 2+ | `key: value` |
+| Response body | `$BODY` before the `@@METRICS@@` line | strip the metrics line |
+| Metrics | `$BODY` `@@METRICS@@` line | split by `\|`: http_code, time_total, size_download, size_upload, content_type, num_redirects |
+
+```bash
+STATUS_LINE=$(head -1 "$HEADERS_FILE")
+STATUS_CODE=$(echo "$STATUS_LINE" | awk '{print $2}')
+STATUS_TEXT=$(echo "$STATUS_LINE" | cut -d' ' -f3-)
+METRICS_LINE=$(echo "$BODY" | grep '@@METRICS@@')
+RESPONSE_BODY=$(echo "$BODY" | sed '/@@METRICS@@/d')
+TIME_TOTAL=$(echo "$METRICS_LINE"  | cut -d'|' -f3)
+SIZE_DOWNLOAD=$(echo "$METRICS_LINE" | cut -d'|' -f4)
+SIZE_UPLOAD=$(echo "$METRICS_LINE"   | cut -d'|' -f5)
+CONTENT_TYPE=$(echo "$METRICS_LINE"  | cut -d'|' -f6)
+```
+
+If `$CURL_EXIT` is non-zero, skip parsing and go to curl-failure handling (Edge Cases).
 
 ### H0-Specific Request Details
 
@@ -236,25 +256,32 @@ Ask the user to confirm or modify the suggested body before sending.
 
 ## Step 5: Report Results
 
-Parse the response and present it clearly.
+Parse the captured data and present a structured, detailed Markdown report inline. Use the template in [references/result-template.md](references/result-template.md).
 
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-请求：POST /v1/1/orders
-状态码：201 Created
-耗时：0.235s
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### Determine the verdict
 
-Response Body:
-{
-  "id": 10086,
-  "orderNo": "TEST-001",
-  "tenantId": 1,
-  ...
-}
-```
+| Status class | Verdict |
+|---|---|
+| 2xx | ✅ 成功 |
+| 3xx | ↪️ 重定向 |
+| 4xx | ⚠️ 客户端错误 |
+| 5xx | ❌ 服务器错误 |
 
-### Status Code Interpretation
+If the request was retried after a 401, prepend: `⚠️ 首次 401，已重新获取 token 并重试一次 — `
+
+### Render the inline report
+
+Fill the Inline Result Skeleton (references/result-template.md) with parsed values:
+- **Header**: `### {verdict} · {METHOD} {PATH}`
+- **Metrics table**: `{STATUS_CODE} {STATUS_TEXT}` / `{TIME_TOTAL} s` / `{SIZE_DOWNLOAD} B / {SIZE_UPLOAD} B`
+- **Request echo**: Method, FULL_URL, masked Auth `Bearer ${ACCESS_TOKEN:0:12}***` + username, request headers, request body (pretty-printed if JSON)
+- **Response headers (key)**: `Content-Type`, `Content-Length`, `Date`, plus any `X-` headers; cap at 8 lines
+- **Response body**: if `CONTENT_TYPE` contains `json` and body parses → 2-space pretty-print in a json code fence; else raw in a fenced block
+- **curl repro**: reconstructed curl with `<TOKEN>` placeholder — never the real token
+
+### Status Code Interpretation (append on non-2xx)
+
+For non-2xx responses, append this hint table after the curl repro:
 
 | Code | Meaning | What to Check |
 |------|---------|---------------|
@@ -267,23 +294,56 @@ Response Body:
 | 404 | 未找到 | 检查 URL 路径和资源 ID |
 | 500 | 服务器错误 | 检查服务端日志，可能是后端 bug |
 
-If the response is 401, automatically retry by obtaining a new token and resending the request once.
+If status is 401 and this is the first attempt, obtain a new token and resend once (see Edge Cases).
+
+### Save to file (optional)
+
+Save when ANY of: response body > 200 lines, user asks to save, or status is non-2xx.
+
+Path: `.claude/api-test-results/{YYYYMMDD-HHMMSS}-{METHOD}-{SANITIZED_PATH}.md`
+- `{SANITIZED_PATH}`: replace `/` with `-`, drop query string, strip illegal filename chars (e.g. `/v1/1/orders` → `v1-1-orders`)
+
+Saved file = the inline report PLUS the Save-File Layout extra sections (full raw headers, full body, request metadata) from references/result-template.md. The curl repro in the file uses `<TOKEN>` (redacted).
+
+After saving, insert under the header line: `> 完整结果已保存：{path}`. Remind the user to add `.claude/api-test-results/` to `.gitignore`.
+
+### Large response inline truncation
+
+If the response body exceeds 200 lines: inline shows the first 50 lines, then `…（共 N 行，完整内容已保存：{path}）`. The full body lives only in the saved file.
 
 ---
 
 ## Edge Cases
 
-### Token Expiration
+### curl Network Failure
 
-If the API returns 401 after a successful token request, re-authenticate and retry once.
+If `$CURL_EXIT` is non-zero (network/DNS/SSL/timeout), render Branch Example D:
+
+`### ❌ 请求失败 · {METHOD} {PATH}`
+- curl exit code + stderr
+- 常见原因：主机不可达 / DNS 解析失败 / 超时（可加 `--max-time 30`）/ 自签证书（可加 `-k`，仅限开发环境）
+
+Do not attempt to parse headers/body.
+
+### Non-JSON 5xx HTML Error Page
+
+If status is 5xx and `CONTENT_TYPE` contains `html`: verdict `❌ 服务器错误`, show the first 20 body lines in an http code fence, then `服务端返回 HTML 错误页，建议查后端日志`. Auto-save full detail (see Step 5 Save to file). Matches Branch Example C.
+
+### Token Expiration (401)
+
+If the API returns 401 after a successful token request, re-authenticate (Step 3) and resend the request **once**. On the retried result, prepend the retry note to the verdict: `⚠️ 首次 401，已重新获取 token 并重试一次 — `.
 
 ### Large Response Bodies
 
-If the response body exceeds 200 lines, show the first 50 lines and offer to save the full response to a file.
+If the body exceeds 200 lines: inline first 50 lines + save full body to file (see Step 5). Matches Branch Example E.
+
+### Empty Body (204)
+
+Render the verdict and metrics normally; the response body section shows `（无内容）`.
 
 ### Self-Signed Certificates
 
-If the base_url uses HTTPS with a self-signed certificate, add `-k` to curl. Warn the user this should only be used in dev environments.
+If `base_url` is HTTPS with a self-signed certificate, set `K_FLAG=(-k)`. Warn the user this is dev-only.
 
 ---
 
